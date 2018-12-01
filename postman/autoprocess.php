@@ -1,0 +1,1 @@
+http://localhost/codeigniter/WebServices/getControllerFun
