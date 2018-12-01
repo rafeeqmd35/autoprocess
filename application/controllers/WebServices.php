@@ -335,6 +335,7 @@ function getControllerFun(){
 	$postdata = file_get_contents("php://input");
 	$_POST = json_decode($postdata, true);
 	$process = $_POST['process'];
+	$tableName = $_POST['tableName'];// first letter alone caps others small
 	$processName = $_POST['processName'];// first letter alone caps others small
 	$fileName = $processName.'Ctrl';
 	$ctrlName = $processName.'Ctrl';
@@ -359,7 +360,7 @@ function getControllerFun(){
 		$getAllFunText = '
 		function '.$getAllFun.'(){
 			header("Content-Type: application/json");
-			$result = $this->'.$modelName.'->'.$getAllFun.'($keyID);
+			$result = $this->'.$modelName.'->'.$getAllFun.'();
 			echo json_encode($result);
 		}';
 
@@ -409,17 +410,14 @@ function getControllerFun(){
 
 		$getAllFunText = '
 		function '.$getAllFun.'(){
-			header("Content-Type: application/json");
-			$result = $this->'.$modelName.'->'.$getAllFun.'($keyID);
-			echo json_encode($result);
+			$sql = "SELECT * FROM '.$tableName.' ";
+			return $this->db->query($sql)->result_array();
 		}';
 
 		$getFunText = '
-		function '.$getFun.'(){
-			header("Content-Type: application/json");
-			$keyID = $_POST["keyID"];
-			$result = $this->'.$modelName.'->'.$getFun.'($keyID);
-			echo json_encode($result);
+		function '.$getFun.'($keyID){
+			$sql = "SELECT * FROM '.$tableName.' WHERE id = ".$keyID;
+			return $this->db->query($sql)->result_array();
 		}';
 
 		$saveFunText = '
