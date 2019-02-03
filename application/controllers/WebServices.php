@@ -254,7 +254,7 @@ class WebServices extends CI_Controller {
 				$inputs = '';
 				foreach ($resultSql as $key => $value) {
 					if($value['COLUMN_KEY'] == 'PRI'){
-						$inputs = 'IN p_'.$value['COLUMN_NAME'].' '.$value['DATA_TYPE'];
+						$inputs = ' p_'.$value['COLUMN_NAME'].' IN '.$value['DATA_TYPE'];
 						break;
 					}
 				}
@@ -262,9 +262,9 @@ class WebServices extends CI_Controller {
 				$inputs = '';
 				foreach ($resultSql as $key => $value) {
 					if($key == 0){
-						$inputs = '<br> IN p_'.$value['COLUMN_NAME'].' '.$value['DATA_TYPE'];
+						$inputs = '  p_'.$value['COLUMN_NAME'].' IN '.$value['DATA_TYPE'];
 					}else{
-						$inputs = $inputs.',<br> IN p_'.$value['COLUMN_NAME'].' '.$value['DATA_TYPE'];
+						$inputs = $inputs.',  p_'.$value['COLUMN_NAME'].' IN '.$value['DATA_TYPE'];
 					}
 					
 				}
@@ -272,9 +272,9 @@ class WebServices extends CI_Controller {
 				$inputs = '';
 				foreach ($resultSql as $key => $value) {
 					if($key == 0){
-						$inputs = ' <br> IN p_'.$value['COLUMN_NAME'].' '.$value['DATA_TYPE'];
+						$inputs = '   p_'.$value['COLUMN_NAME'].' IN '.$value['DATA_TYPE'];
 					}else{
-						$inputs = $inputs.',<br> IN p_'.$value['COLUMN_NAME'].' '.$value['DATA_TYPE'];
+						$inputs = $inputs.',  p_'.$value['COLUMN_NAME'].' IN '.$value['DATA_TYPE'];
 					}
 					
 				}
@@ -285,8 +285,9 @@ class WebServices extends CI_Controller {
 				$sqlAction = '('.$inputs.')';
 			}
 			
-			$sql = " CREATE PROCEDURE `$procedureName` ".$sqlAction;
-			$sql = $sql." IS E_CUST_ERROR EXCEPTION; BEGIN ";
+			$sql = " CREATE OR REPLACE PROCEDURE $procedureName ".$sqlAction;
+			//$sql = $sql." IS E_CUST_ERROR EXCEPTION; BEGIN ";
+			$sql = $sql." IS BEGIN ";
 			//action method here
 			if($action == 'SELECT_ALL'){
 				$bodyContent = "SELECT * FROM $tableName";
@@ -357,12 +358,13 @@ class WebServices extends CI_Controller {
 			//action end
 			$sql = $sql . $bodyContent ;
 			$sql = $sql." ;  ";
-			$sql = $sql." END; ";
+			$sql = $sql." END $procedureName; ";
 			//$result =  $dynamicDB->query($sql);
 		}
 		
 		
 		$outputArray['query'] = $sql;
+		//$outputArray = $sql;
 		echo json_encode($outputArray);
 		exit;
 	}
@@ -425,6 +427,7 @@ function getControllerFun(){
 	$deleteFun = 'delete'.$processName.'Fun';
 	$processFun = $processName.'Process';
 	$viewFun = $processName.'_View';
+	$datatable = $processName.'_Datatable';
 	$addFun = $processName.'_Add';
 	$editFun = $processName.'_Edit';
 	if($process == 'NEW'){
@@ -469,6 +472,13 @@ function getControllerFun(){
 		}';
 
 
+		$getDatatableText = '
+		function '.$datatable.'(){
+			$this->datatables->select("*")
+	    	->from("'.$tableName.'");
+	    	echo $this->datatables->generate();
+		}';
+
 		$getAllFunText = '
 		function '.$getAllFun.'(){
 			header("Content-Type: application/json");
@@ -508,7 +518,7 @@ function getControllerFun(){
 	}
 ?>';
 
-		$txt = $classDefText.$processFunText.$viewFunText.$addFunText.$editFunText.$getAllFunText.$getFunText.$saveFunText.$updateFunText.$deleteFunText;
+		$txt = $classDefText.$processFunText.$viewFunText.$addFunText.$editFunText.$getDatatableText.$getAllFunText.$getFunText.$saveFunText.$updateFunText.$deleteFunText;
 
 		$myfile = file_put_contents(CTRLPATH.$ctrlName.'.php', $txt.PHP_EOL , FILE_APPEND | LOCK_EX);
 		// controller creation completed
@@ -593,4 +603,80 @@ function getControllerFun(){
 	}
 	
 }
+
+function createModule(){
+	$postdata = file_get_contents("php://input");
+	$_POST = json_decode($postdata, true);
+
+	$outputArray = array();
+	$dbType = $_POST['dbType'];
+	$host = $_POST['hostName'];
+	$user = $_POST['user'];
+	$pass = $_POST['pass'];
+	$dbname = $_POST['db'];
+	$port = '';
+	$dbdriver = $_POST['driver'];
+	$tableName = $_POST['tableName'];
+	$procedureName = $_POST['procedureName'];
+	$remarks = $_POST['remarks'];
+	$action = $_POST['action'];
+	$strtoupper = $_POST['caps'];
+	
+	$bodyContent = '';
+
+	$this->dyDB = array(
+		'hostname' => $host,
+		'username' => $user,
+		'password' => $pass,
+		'database' => $dbname,
+		'dbdriver' => $dbdriver,
+		'dbprefix' => '',
+		'pconnect' => FALSE,
+		'db_debug' => TRUE,
+		'port' => $port
+		// 'char_set' => 'utf8',
+		// 'dbcollat' => 'utf8_general_ci'
+		);
+
+	$dynamicDB = $this->load->database($this->dyDB, TRUE);
+
+	$process = $_POST['process'];
+	$tableName = $_POST['tableName'];// first letter alone caps others small
+	$processName = $_POST['processName'];// first letter alone caps others small
+	$pkgName = $_POST['pkgName'];// package name if not send then empty
+	
+	$module = $_POST['module'];
+	
+	$fileName = $processName.'Ctrl';
+	$ctrlName = $processName.'Ctrl';
+	$modelName = $processName.'Mod';
+	$getAllFun = 'getAll'.$processName.'Fun';
+	$getFun = 'get'.$processName.'Fun';
+	$saveFun = 'save'.$processName.'Fun';
+	$updateFun = 'update'.$processName.'Fun';
+	$deleteFun = 'delete'.$processName.'Fun';
+	$processFun = $processName.'Process';
+	$viewFun = $processName.'_View';
+	$addFun = $processName.'_Add';
+	$editFun = $processName.'_Edit';
+	if($process == 'NEW'){
+		
+	}
+
 }
+
+
+
+
+}
+
+
+
+
+
+
+// if (!file_exists('path/to/directory')) {
+//     mkdir('path/to/directory', 0777, true);
+// }
+
+?>
