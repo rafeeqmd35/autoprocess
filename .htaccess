@@ -1,7 +1,7 @@
 SetEnv APPLICATION_ENV development
 
 RewriteEngine on
-RewriteBase /codeigniter
+RewriteBase /autoprocess-master
 
 
 
